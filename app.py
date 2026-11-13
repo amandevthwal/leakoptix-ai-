@@ -11,29 +11,69 @@ import re
 
 st.set_page_config(page_title="LeakOptix AI", page_icon="🛡️", layout="wide")
 
-# --- 🔐 ENTERPRISE SECURITY & LOGIN GATE (CODE 24) ---
+# --- 🔐 MULTI-COMPANY ENTERPRISE AUTH & SIGN-UP SYSTEM (CODE 30) ---
+def init_user_db():
+    conn_u = sqlite3.connect("leakoptix_history.db")
+    cu = conn_u.cursor()
+    cu.execute("CREATE TABLE IF NOT EXISTS company_users (company_name TEXT, username TEXT PRIMARY KEY, password TEXT)")
+    conn_u.commit()
+    conn_u.close()
+
+init_user_db()
+
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
+if "active_company" not in st.session_state:
+    st.session_state["active_company"] = "LeakOptix Master Admin"
 
 if not st.session_state["authenticated"]:
     st.title("🔐 LeakOptix AI - Enterprise Security Portal")
-    st.subheader("Authorized Corporate Access Only | Bank-Grade Encryption")
+    st.subheader("Authorized Corporate Access Only | Multi-Tenant Cloud Architecture")
     st.markdown("---")
 
     l_col1, l_col2, l_col3 = st.columns([1, 2, 1])
     with l_col2:
-        st.info("🏢 **Enterprise Demo Credentials:** Username: `admin` | Password: `leakoptix2026`")
-        username = st.text_input("👤 Corporate Username / Admin ID")
-        password = st.text_input("🔑 Security Password", type="password")
-        if st.button("🔓 Secure Login to Dashboard", type="primary"):
-            if username == "amit" and password == "amit@123":
-                st.session_state["authenticated"] = True
-                st.rerun()
-            else:
-                st.error("❌ Access Denied! Invalid Corporate Credentials.")
+        tab_login, tab_signup = st.tabs(["🔐 Existing Client Login", "📝 New Company Sign-Up"])
+        with tab_login:
+            username = st.text_input("👤 Corporate Username / Admin ID", key="login_user")
+            password = st.text_input("🔑 Security Password", type="password", key="login_pass")
+            if st.button("🔓 Secure Login to Dashboard", type="primary"):
+                if username == "amit" and password == "amit@123":
+                    st.session_state["authenticated"] = True
+                    st.session_state["active_company"] = "LeakOptix HQ (Master Admin)"
+                    st.rerun()
+                else:
+                    conn_u = sqlite3.connect("leakoptix_history.db")
+                    cu = conn_u.cursor()
+                    cu.execute("SELECT company_name FROM company_users WHERE username=? AND password=?", (username, password))
+                    row = cu.fetchone()
+                    conn_u.close()
+                    if row:
+                        st.session_state["authenticated"] = True
+                        st.session_state["active_company"] = row
+                        st.rerun()
+                    else:
+                        st.error("❌ Access Denied! Invalid Corporate Credentials.")
+        with tab_signup:
+            new_comp = st.text_input("🏢 Company / Organization Name", key="reg_comp")
+            new_user = st.text_input("👤 Choose Admin Username", key="reg_user")
+            new_pass = st.text_input("🔑 Create Security Password", type="password", key="reg_pass")
+            if st.button("✅ Register Enterprise Account"):
+                if new_comp.strip() and new_user.strip() and new_pass.strip():
+                    try:
+                        conn_u = sqlite3.connect("leakoptix_history.db")
+                        cu = conn_u.cursor()
+                        cu.execute("INSERT INTO company_users VALUES (?, ?, ?)", (new_comp.strip(), new_user.strip(), new_pass.strip()))
+                        conn_u.commit()
+                        conn_u.close()
+                        st.success(f"🎉 Account created for **{new_comp}**! Switch to 'Existing Client Login' tab to sign in.")
+                    except sqlite3.IntegrityError:
+                        st.warning("⚠️ Username already exists! Please choose a different username.")
+                else:
+                    st.warning("⚠️ Please fill all three fields to register your company.")
 else:
     st.sidebar.title("🛡️ LeakOptix AI")
-    st.sidebar.success("✅ Logged in as: Enterprise Admin")
+    st.sidebar.success(f"🏢 {st.session_state['active_company']}")
     st.sidebar.info("📍 Server: Jaipur Cloud Node")
     if st.sidebar.button("🚪 Secure Logout"):
         st.session_state["authenticated"] = False
