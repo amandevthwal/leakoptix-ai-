@@ -21,8 +21,16 @@ def init_user_db():
     conn_u = sqlite3.connect("leakoptix_history.db")
     cu = conn_u.cursor()
     cu.execute("CREATE TABLE IF NOT EXISTS company_users (company_name TEXT, username TEXT PRIMARY KEY, password TEXT)")
+    cu.execute("CREATE TABLE IF NOT EXISTS security_access_logs (Event_Time TEXT, Company_Name TEXT, Actor_User TEXT, Security_Event TEXT)")
     conn_u.commit()
     conn_u.close()
+
+def log_security_event(comp_name, actor_name, event_desc):
+    conn_s = sqlite3.connect("leakoptix_history.db")
+    cs = conn_s.cursor()
+    cs.execute("INSERT INTO security_access_logs VALUES (?, ?, ?, ?)", (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), comp_name, actor_name, event_desc))
+    conn_s.commit()
+    conn_s.close()
 
 init_user_db()
 
@@ -52,6 +60,7 @@ if not st.session_state["authenticated"]:
                         st.session_state["authenticated"] = True
                         st.session_state["active_company"] = "LeakOptix HQ (Master Admin)"
                         st.session_state["failed_attempts"] = 0
+                        log_security_event("LeakOptix HQ (Master Admin)", "amit", "Master Admin Secure Login (SHA-256 Session)")
                         st.rerun()
                     else:
                         enc_p = hash_sec_pwd(password)
@@ -132,6 +141,16 @@ else:
                 st.sidebar.success("✅ Zero-Retention Executed: All stored records for your company have been permanently wiped!")
             else:
                 st.sidebar.info("👑 Master Admin Vault is protected from accidental wipe.")
+
+    with st.sidebar.expander("🛡️ Security Access & Audit Trail"):
+        conn_t = sqlite3.connect("leakoptix_history.db")
+        c_comp = st.session_state.get("active_company", "")
+        if c_comp == "LeakOptix HQ (Master Admin)":
+            df_sec = pd.read_sql_query("SELECT * FROM security_access_logs ORDER BY Event_Time DESC LIMIT 15", conn_t)
+        else:
+            df_sec = pd.read_sql_query("SELECT Event_Time, Actor_User, Security_Event FROM security_access_logs WHERE Company_Name=? ORDER BY Event_Time DESC LIMIT 15", conn_t, params=(c_comp,))
+        conn_t.close()
+        st.dataframe(df_sec, use_container_width=True)
 
     st.title("🛡️ LeakOptix AI - Enterprise Expense & SaaS Safeguard")
 
