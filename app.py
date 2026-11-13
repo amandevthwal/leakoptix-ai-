@@ -79,6 +79,7 @@ else:
     st.sidebar.subheader("⚙️ Executive Controls")
     curr_mode = st.sidebar.selectbox("💱 Display Currency", ["USD ($)", "INR (₹)"], key="curr_select")
     budget_limit = st.sidebar.number_input("🎯 Monthly Budget Limit ($)", min_value=100, value=1500, step=100, key="budget_cap")
+    pii_mask_on = st.sidebar.checkbox("🕵️ Enable Employee PII Masking", value=False, key="pii_mask_toggle")
     if st.sidebar.button("🚪 Secure Logout"):
         st.session_state["authenticated"] = False
         st.rerun()
@@ -355,7 +356,17 @@ Generated securely by LeakOptix AI Enterprise Safeguard."""
 
 
 
-                            # --- नया फीचर (Code 33): Live Budget Threshold & Currency Alert ---
+                            # --- नया फीचर (Code 37): Employee PII Data Masking & Privacy Shield ---
+                def mask_pii_name(name_val):
+                    parts = str(name_val).strip().split()
+                    masked = [p[:2] + "***" if len(p) > 2 else p[0] + "*" for p in parts if len(p) > 0]
+                    return " ".join(masked) if masked else "Hidden_User"
+
+                if st.session_state.get("pii_mask_toggle", False) and "Employee_Name" in df.columns:
+                    df["Employee_Name"] = df["Employee_Name"].apply(mask_pii_name)
+                    st.sidebar.warning("🛡️ PII Privacy Mode Active: Employee names are masked.")
+
+                # --- नया फीचर (Code 33): Live Budget Threshold & Currency Alert ---
                 total_spend_usd = int(df["Monthly_Cost_USD"].sum())
                 rate = 84 if st.session_state.get("curr_select") == "INR (₹)" else 1
                 sym = "₹" if rate == 84 else "$"
@@ -387,6 +398,23 @@ Generated securely by LeakOptix AI Enterprise Safeguard."""
 
                 st.info(f"📊 **Filtered View:** Showing **{len(filtered_df)} records** | Filtered Monthly Spend: **{sym}{int(filtered_df['Monthly_Cost_USD'].sum()) * rate:,}/month**")
                 st.dataframe(filtered_df, use_container_width=True)
+
+                # --- नया फीचर (Code 38): Shadow IT & Vendor Consolidation Deep Detector ---
+                st.markdown("---")
+                st.header("🧩 Shadow IT & Vendor License Consolidation Analyzer")
+                vendor_summary = df.groupby("Clean_Vendor").agg(
+                    Active_Users=("Employee_Name", "nunique"),
+                    Total_Transactions=("Monthly_Cost_USD", "count"),
+                    Total_Monthly_Spend=("Monthly_Cost_USD", "sum")
+                ).reset_index()
+
+                vendor_summary["Consolidation_Advice"] = vendor_summary.apply(
+                    lambda r: "💡 Switch to Enterprise Team Plan (Save ~25%)" if r["Active_Users"] > 1 else "✅ Single License (Optimal)",
+                    axis=1
+                )
+                vendor_summary = vendor_summary.sort_values(by="Total_Monthly_Spend", ascending=False)
+                st.info("🔍 Shadow IT Insight: Vendors with multiple scattered individual licenses can be merged into a single discounted Enterprise Plan.")
+                st.dataframe(vendor_summary, use_container_width=True)
 
                 # --- नया फीचर (Code 35): Suspicious Transaction Risk Ranking Engine ---
                 st.markdown("---")
