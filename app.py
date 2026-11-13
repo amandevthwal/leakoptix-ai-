@@ -83,6 +83,30 @@ else:
         st.session_state["authenticated"] = False
         st.rerun()
 
+    # --- नया फीचर (Code 36): Client Password Change & Security Manager ---
+    with st.sidebar.expander("🔑 Change Company Password"):
+        if st.session_state.get("active_company") == "LeakOptix HQ (Master Admin)":
+            st.info("👑 Master Admin password is protected at core config level.")
+        else:
+            old_p = st.text_input("Current Password", type="password", key="old_pwd_box")
+            new_p = st.text_input("New Password", type="password", key="new_pwd_box")
+            if st.button("Update Password", key="btn_upd_pwd"):
+                if old_p and new_p:
+                    conn_p = sqlite3.connect("leakoptix_history.db")
+                    cp = conn_p.cursor()
+                    cp.execute("SELECT username FROM company_users WHERE company_name=? AND password=?", (st.session_state["active_company"], old_p))
+                    u_row = cp.fetchone()
+                    if u_row:
+                        cp.execute("UPDATE company_users SET password=? WHERE username=?", (new_p, u_row[0]))
+                        conn_p.commit()
+                        st.success("✅ Password updated securely!")
+                    else:
+                        st.error("❌ Incorrect current password!")
+                    conn_p.close()
+                else:
+                    st.warning("⚠️ Enter both current and new password.")
+
+
     st.title("🛡️ LeakOptix AI - Enterprise Expense & SaaS Safeguard")
 
     st.subheader("Welcome Amit! Executive Visual Analytics & Multi-Source Audit Engine is Live.")
@@ -363,6 +387,29 @@ Generated securely by LeakOptix AI Enterprise Safeguard."""
 
                 st.info(f"📊 **Filtered View:** Showing **{len(filtered_df)} records** | Filtered Monthly Spend: **{sym}{int(filtered_df['Monthly_Cost_USD'].sum()) * rate:,}/month**")
                 st.dataframe(filtered_df, use_container_width=True)
+
+                # --- नया फीचर (Code 35): Suspicious Transaction Risk Ranking Engine ---
+                st.markdown("---")
+                st.header("🚨 Transaction Risk Ranking & Anomaly Prioritizer")
+                ranked_df = df.copy()
+                avg_cost = ranked_df["Monthly_Cost_USD"].mean() if len(ranked_df) > 0 else 0
+
+                def assign_risk_badge(row):
+                    status_val = str(row.get("HR_Status", "")).lower()
+                    cost_val = float(row.get("Monthly_Cost_USD", 0))
+                    if any(w in status_val for w in ["ex", "resign", "left", "inactive", "terminated"]):
+                        return "🔴 CRITICAL (Ex-Employee)"
+                    elif cost_val > (avg_cost * 1.8) and cost_val > 100:
+                        return "🟠 HIGH SPIKE (Abnormal Cost)"
+                    elif cost_val > avg_cost:
+                        return "🟡 MEDIUM (Above Average)"
+                    else:
+                        return "🟢 NORMAL"
+
+                ranked_df["AI_Risk_Level"] = ranked_df.apply(assign_risk_badge, axis=1)
+                ranked_df = ranked_df.sort_values(by=["AI_Risk_Level", "Monthly_Cost_USD"], ascending=[True, False])
+                st.info("🎯 AI Priority Order: Critical and High-Spike transactions are automatically ranked at the top for immediate CFO action.")
+                st.dataframe(ranked_df[["AI_Risk_Level", "Employee_Name", "Clean_Vendor", "Monthly_Cost_USD"]], use_container_width=True)
 
                 # --- नया फीचर (Code 29): 1-Year & 3-Year Executive ROI Projection ---
                 st.markdown("---")
