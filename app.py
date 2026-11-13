@@ -11,7 +11,12 @@ import re
 
 st.set_page_config(page_title="LeakOptix AI", page_icon="🛡️", layout="wide")
 
-# --- 🔐 MULTI-COMPANY ENTERPRISE AUTH & SIGN-UP SYSTEM (CODE 30) ---
+# --- 🔐 ZERO-TRUST SHA-256 ENCRYPTED AUTH & ANTI-HACK SHIELD (CODE 40) ---
+import hashlib
+
+def hash_sec_pwd(raw_pwd):
+    return hashlib.sha256(str(raw_pwd).strip().encode("utf-8")).hexdigest()
+
 def init_user_db():
     conn_u = sqlite3.connect("leakoptix_history.db")
     cu = conn_u.cursor()
@@ -25,58 +30,66 @@ if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 if "active_company" not in st.session_state:
     st.session_state["active_company"] = "LeakOptix Master Admin"
+if "failed_attempts" not in st.session_state:
+    st.session_state["failed_attempts"] = 0
 
 if not st.session_state["authenticated"]:
-    st.title("🔐 LeakOptix AI - Enterprise Security Portal")
-    st.subheader("Authorized Corporate Access Only | Multi-Tenant Cloud Architecture")
+    st.title("🔐 LeakOptix AI - Zero-Trust Security Portal")
+    st.subheader("SHA-256 Encrypted Corporate Access | Isolated Multi-Tenant Vault")
     st.markdown("---")
 
     l_col1, l_col2, l_col3 = st.columns([1, 2, 1])
     with l_col2:
-        tab_login, tab_signup = st.tabs(["🔐 Existing Client Login", "📝 New Company Sign-Up"])
-        with tab_login:
-            username = st.text_input("👤 Corporate Username / Admin ID", key="login_user")
-            password = st.text_input("🔑 Security Password", type="password", key="login_pass")
-            if st.button("🔓 Secure Login to Dashboard", type="primary"):
-                if username == "amit" and password == "amit@123":
-                    st.session_state["authenticated"] = True
-                    st.session_state["active_company"] = "LeakOptix HQ (Master Admin)"
-                    st.rerun()
-                else:
-                    conn_u = sqlite3.connect("leakoptix_history.db")
-                    cu = conn_u.cursor()
-                    cu.execute("SELECT company_name FROM company_users WHERE username=? AND password=?", (username, password))
-                    row = cu.fetchone()
-                    conn_u.close()
-                    if row:
+        if st.session_state["failed_attempts"] >= 3:
+            st.error("🚨 SECURITY LOCKOUT: Too many failed login attempts! Portal locked to prevent unauthorized access. Refresh page to reset security token.")
+        else:
+            tab_login, tab_signup = st.tabs(["🔐 Existing Client Login", "📝 New Company Sign-Up"])
+            with tab_login:
+                username = st.text_input("👤 Corporate Username / Admin ID", key="login_user")
+                password = st.text_input("🔑 Security Password", type="password", key="login_pass")
+                if st.button("🔓 Secure Login to Dashboard", type="primary"):
+                    if username == "amit" and password == "amit@123":
                         st.session_state["authenticated"] = True
-                        st.session_state["active_company"] = row
+                        st.session_state["active_company"] = "LeakOptix HQ (Master Admin)"
+                        st.session_state["failed_attempts"] = 0
                         st.rerun()
                     else:
-                        st.error("❌ Access Denied! Invalid Corporate Credentials.")
-        with tab_signup:
-            new_comp = st.text_input("🏢 Company / Organization Name", key="reg_comp")
-            new_user = st.text_input("👤 Choose Admin Username", key="reg_user")
-            new_pass = st.text_input("🔑 Create Security Password", type="password", key="reg_pass")
-            if st.button("✅ Register Enterprise Account"):
-                if new_comp.strip() and new_user.strip() and new_pass.strip():
-                    try:
+                        enc_p = hash_sec_pwd(password)
                         conn_u = sqlite3.connect("leakoptix_history.db")
                         cu = conn_u.cursor()
-                        cu.execute("INSERT INTO company_users VALUES (?, ?, ?)", (new_comp.strip(), new_user.strip(), new_pass.strip()))
-                        conn_u.commit()
+                        cu.execute("SELECT company_name FROM company_users WHERE username=? AND (password=? OR password=?)", (username, enc_p, password))
+                        row = cu.fetchone()
                         conn_u.close()
-                        st.success(f"🎉 Account created for **{new_comp}**! Switch to 'Existing Client Login' tab to sign in.")
-                    except sqlite3.IntegrityError:
-                        st.warning("⚠️ Username already exists! Please choose a different username.")
-                else:
-                    st.warning("⚠️ Please fill all three fields to register your company.")
+                        if row:
+                            st.session_state["authenticated"] = True
+                            st.session_state["active_company"] = row[0]
+                            st.session_state["failed_attempts"] = 0
+                            st.rerun()
+                        else:
+                            st.session_state["failed_attempts"] += 1
+                            rem = 3 - st.session_state["failed_attempts"]
+                            st.error(f"❌ Access Denied! Invalid Credentials. ({rem} attempts remaining before Security Lockout)")
+            with tab_signup:
+                new_comp = st.text_input("🏢 Company / Organization Name", key="reg_comp")
+                new_user = st.text_input("👤 Choose Admin Username", key="reg_user")
+                new_pass = st.text_input("🔑 Create Strong Password (Min 6 chars)", type="password", key="reg_pass")
+                if st.button("✅ Register Encrypted Enterprise Account"):
+                    if new_comp.strip() and new_user.strip() and len(new_pass.strip()) >= 6:
+                        try:
+                            conn_u = sqlite3.connect("leakoptix_history.db")
+                            cu = conn_u.cursor()
+                            cu.execute("INSERT INTO company_users VALUES (?, ?, ?)", (new_comp.strip(), new_user.strip(), hash_sec_pwd(new_pass)))
+                            conn_u.commit()
+                            conn_u.close()
+                            st.success(f"🛡️ Encrypted Account created for **{new_comp}**! Password secured with SHA-256.")
+                        except sqlite3.IntegrityError:
+                            st.warning("⚠️ Username already exists! Please choose a different username.")
+                    else:
+                        st.warning("⚠️ Please fill all fields and use a strong password (minimum 6 characters).")
 else:
     st.sidebar.title("🛡️ LeakOptix AI")
     st.sidebar.success(f"🏢 {st.session_state['active_company']}")
-    st.sidebar.info("📍 Server: Jaipur Cloud Node")
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("⚙️ Executive Controls")
+    st.sidebar.info("📍 Server: Jaipur Cloud Node | 🔒 SHA-256")
     curr_mode = st.sidebar.selectbox("💱 Display Currency", ["USD ($)", "INR (₹)"], key="curr_select")
     budget_limit = st.sidebar.number_input("🎯 Monthly Budget Limit ($)", min_value=100, value=1500, step=100, key="budget_cap")
     pii_mask_on = st.sidebar.checkbox("🕵️ Enable Employee PII Masking", value=False, key="pii_mask_toggle")
@@ -84,29 +97,41 @@ else:
         st.session_state["authenticated"] = False
         st.rerun()
 
-    # --- नया फीचर (Code 36): Client Password Change & Security Manager ---
     with st.sidebar.expander("🔑 Change Company Password"):
         if st.session_state.get("active_company") == "LeakOptix HQ (Master Admin)":
             st.info("👑 Master Admin password is protected at core config level.")
         else:
             old_p = st.text_input("Current Password", type="password", key="old_pwd_box")
-            new_p = st.text_input("New Password", type="password", key="new_pwd_box")
+            new_p = st.text_input("New Password (Min 6 chars)", type="password", key="new_pwd_box")
             if st.button("Update Password", key="btn_upd_pwd"):
-                if old_p and new_p:
+                if old_p and len(new_p.strip()) >= 6:
                     conn_p = sqlite3.connect("leakoptix_history.db")
                     cp = conn_p.cursor()
-                    cp.execute("SELECT username FROM company_users WHERE company_name=? AND password=?", (st.session_state["active_company"], old_p))
+                    cp.execute("SELECT username FROM company_users WHERE company_name=? AND (password=? OR password=?)", (st.session_state["active_company"], hash_sec_pwd(old_p), old_p))
                     u_row = cp.fetchone()
                     if u_row:
-                        cp.execute("UPDATE company_users SET password=? WHERE username=?", (new_p, u_row[0]))
+                        cp.execute("UPDATE company_users SET password=? WHERE username=?", (hash_sec_pwd(new_p), u_row[0]))
                         conn_p.commit()
-                        st.success("✅ Password updated securely!")
+                        st.success("✅ Password updated & encrypted with SHA-256!")
                     else:
                         st.error("❌ Incorrect current password!")
                     conn_p.close()
                 else:
-                    st.warning("⚠️ Enter both current and new password.")
+                    st.warning("⚠️ Enter current password and a new password of at least 6 characters.")
 
+    with st.sidebar.expander("🧹 Zero-Retention Data Wipe"):
+        st.caption("GDPR / DPDP Act Compliance: Permanently delete your company's stored audit records anytime.")
+        if st.button("🗑️ Purge My Audit History", key="btn_wipe_data"):
+            curr_c = st.session_state.get("active_company", "")
+            if curr_c and curr_c != "LeakOptix HQ (Master Admin)":
+                conn_w = sqlite3.connect("leakoptix_history.db")
+                cw = conn_w.cursor()
+                cw.execute("DELETE FROM enterprise_audit_logs WHERE Company_Name=?", (curr_c,))
+                conn_w.commit()
+                conn_w.close()
+                st.sidebar.success("✅ Zero-Retention Executed: All stored records for your company have been permanently wiped!")
+            else:
+                st.sidebar.info("👑 Master Admin Vault is protected from accidental wipe.")
 
     st.title("🛡️ LeakOptix AI - Enterprise Expense & SaaS Safeguard")
 
