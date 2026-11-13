@@ -401,6 +401,33 @@ Generated securely by LeakOptix AI Enterprise Safeguard."""
 
                 # --- नया फीचर (Code 38): Shadow IT & Vendor Consolidation Deep Detector ---
                 st.markdown("---")
+                # --- नया फीचर (Code 39): Enterprise Financial Health Score & Executive Grade Gauge ---
+                st.header("🏆 Enterprise SaaS Financial Health Scorecard")
+                total_spend_val = max(float(df["Monthly_Cost_USD"].sum()), 1.0)
+                leak_ratio = min(float(total_real_savings) / total_spend_val, 1.0)
+                health_score = max(0, min(100, int(round((1.0 - leak_ratio) * 100))))
+                if health_score >= 90:
+                    grade_short = "Grade A+"
+                    status_msg = "🟢 Optimal SaaS Spend Efficiency"
+                elif health_score >= 75:
+                    grade_short = "Grade B"
+                    status_msg = "🟡 Minor Optimization Needed"
+                elif health_score >= 50:
+                    grade_short = "Grade C"
+                    status_msg = "🟠 Immediate Audit Action Recommended"
+                else:
+                    grade_short = "Grade D (CRITICAL)"
+                    status_msg = "🔴 Severe Recurring Financial Waste Detected"
+                hs_col1, hs_col2, hs_col3 = st.columns(3)
+                with hs_col1:
+                    st.metric(label="🩺 Financial Health Score", value=f"{health_score} / 100", delta="AI Governance Index")
+                with hs_col2:
+                    st.metric(label="🏅 Executive Audit Grade", value=grade_short, delta=status_msg)
+                with hs_col3:
+                    leak_pct = round(leak_ratio * 100, 1)
+                    st.metric(label="📉 Revenue Leakage Rate", value=f"{leak_pct}%", delta="Of Total Monthly SaaS Spend")
+                st.progress(health_score / 100.0)
+                st.markdown("---")
                 st.header("🧩 Shadow IT & Vendor License Consolidation Analyzer")
                 vendor_summary = df.groupby("Clean_Vendor").agg(
                     Active_Users=("Employee_Name", "nunique"),
