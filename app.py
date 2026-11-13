@@ -257,6 +257,32 @@ else:
                     st.success("✅ Current Audit Record permanently saved to SQLite Database!")
                     st.dataframe(df_hist)
 
+
+                # --- नया फीचर (Code 28): LeakOptix AI Financial Chat Assistant ---
+                st.markdown("---")
+                st.header("🤖 Ask LeakOptix AI (Interactive Financial Assistant)")
+                st.info("💡 Ask questions about your uploaded ledger (e.g., 'total savings', 'ghost employees', 'highest spender', 'top vendor')")
+                user_q = st.text_input("💬 Type your financial audit question here:", key="ai_chat_input")
+                if user_q:
+                    q_lower = user_q.lower()
+                    if "saving" in q_lower or "leak" in q_lower or "total" in q_lower or "bachat" in q_lower:
+                        st.success(f"🤖 **LeakOptix AI:** Based on your uploaded ledger, total detected monthly leakage is **${total_real_savings}/month** (**${total_real_savings * 12}/year**) across **{total_real_risks} critical risks**.")
+                    elif "ghost" in q_lower or "ex" in q_lower or "resign" in q_lower or "employee" in q_lower:
+                        if not ghost_df.empty:
+                            names = ", ".join(ghost_df["Employee_Name"].unique())
+                            st.warning(f"🤖 **LeakOptix AI:** Ex-employees still incurring active charges: **{names}**. Total Ghost Subscription loss is **${int(ghost_loss)}/month**.")
+                        else:
+                            st.success("🤖 **LeakOptix AI:** Good news! Zero ghost subscriptions found for resigned or terminated employees.")
+                    elif "high" in q_lower or "most" in q_lower or "spike" in q_lower or "who" in q_lower:
+                        top_row = df.loc[df["Monthly_Cost_USD"].idxmax()]
+                        st.error(f"🤖 **LeakOptix AI:** Highest single expense is **${top_row['Monthly_Cost_USD']}/month** by **{top_row['Employee_Name']}** on vendor **{top_row['Clean_Vendor']}**.")
+                    elif "vendor" in q_lower or "software" in q_lower:
+                        top_v = df.groupby("Clean_Vendor")["Monthly_Cost_USD"].sum().idxmax()
+                        top_v_amt = df.groupby("Clean_Vendor")["Monthly_Cost_USD"].sum().max()
+                        st.info(f"🤖 **LeakOptix AI:** Your highest spending software vendor is **{top_v}** with a total monthly spend of **${int(top_v_amt)}/month**.")
+                    else:
+                        st.info(f"🤖 **LeakOptix AI Summary:** Audited **{len(df)} records**. Found **${total_real_savings}/month** in preventable waste. Try asking about 'total savings', 'ghost employees', 'highest spender', or 'top vendor'.")
+
             else:
                 st.warning("⚠️ Please ensure your files contain 'Monthly_Cost_USD' and 'HR_Status' columns.")
         except Exception as e:
