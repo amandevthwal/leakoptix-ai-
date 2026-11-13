@@ -5,6 +5,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import sys
+import pypdf
 import re
 
 st.set_page_config(page_title="LeakOptix AI", page_icon="🛡️", layout="wide")
@@ -48,6 +49,29 @@ else:
         bank_file = st.file_uploader("🏦 Upload Bank / Card Statement (.csv, .xlsx)", type=["csv", "xlsx"], key="bank")
     with up_col2:
         hr_file = st.file_uploader("👥 Upload HR Employee Roster (Optional if combined)", type=["csv", "xlsx"], key="hr")
+
+
+    st.markdown("---")
+    st.subheader("📄 Bonus AI Module: Real PDF SaaS Invoice Scanner")
+    pdf_file = st.file_uploader("🧾 Upload Vendor PDF Invoice (AWS, OpenAI, Adobe, etc.)", type=["pdf"], key="pdf_inv")
+    if pdf_file is not None:
+        try:
+            reader = pypdf.PdfReader(pdf_file)
+            full_text = ""
+            for page in reader.pages:
+                extracted = page.extract_text()
+                if extracted:
+                    full_text += extracted + "\n"
+            st.success(f"✅ PDF Invoice Scanned Successfully! ({len(reader.pages)} Pages Audited)")
+            amounts = re.findall(r"\$\s?[0-9,]+(?:\.[0-9]{1,2})?", full_text)
+            if amounts:
+                st.warning(f"💰 Detected Billing Amounts in PDF: {', '.join(amounts)}")
+            else:
+                st.info("💡 No '$' currency symbol found; displaying extracted invoice text below.")
+            with st.expander("🔍 View Extracted PDF Invoice Text"):
+                st.text(full_text[:1500])
+        except Exception as e:
+            st.error(f"🛡️ PDF Scan Fail-Safe: {e}")
 
     if bank_file is not None:
         try:
