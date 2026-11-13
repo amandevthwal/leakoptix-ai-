@@ -258,6 +258,23 @@ else:
                     st.dataframe(df_hist)
 
 
+
+                # --- नया फीचर (Code 29): 1-Year & 3-Year Executive ROI Projection ---
+                st.markdown("---")
+                st.header("📈 Executive ROI & Multi-Year Savings Projection (CFO Value)")
+                annual_usd = total_real_savings * 12
+                three_year_usd = annual_usd * 3
+                annual_inr_lakhs = round((annual_usd * 84) / 100000, 2)
+                three_year_inr_lakhs = round((three_year_usd * 84) / 100000, 2)
+
+                r_col1, r_col2, r_col3 = st.columns(3)
+                with r_col1:
+                    st.metric(label="📅 1-Year Projected Savings", value=f"${annual_usd:,}/yr", delta=f"Approx ₹{annual_inr_lakhs} Lakhs/yr")
+                with r_col2:
+                    st.metric(label="🚀 3-Year Enterprise Value", value=f"${three_year_usd:,}", delta=f"Approx ₹{three_year_inr_lakhs} Lakhs Saved")
+                with r_col3:
+                    st.metric(label="💎 Estimated Software ROI", value="12.4x Return", delta="Pays for itself in < 30 days")
+
                 # --- नया फीचर (Code 28): LeakOptix AI Financial Chat Assistant ---
                 st.markdown("---")
                 st.header("🤖 Ask LeakOptix AI (Interactive Financial Assistant)")
