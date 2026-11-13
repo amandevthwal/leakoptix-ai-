@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import sys
 import pypdf
+from fpdf import FPDF
 import re
 
 st.set_page_config(page_title="LeakOptix AI", page_icon="🛡️", layout="wide")
@@ -221,7 +222,27 @@ else:
                         df_report = pd.DataFrame(report_rows)
                         st.dataframe(df_report)
                         csv_data = df_report.to_csv(index=False).encode("utf-8")
-                        st.download_button(label="⬇️ Download Complete Leakage Audit Report (.csv)", data=csv_data, file_name="LeakOptix_CFO_Audit_Report.csv", mime="text/csv")
+    
+                    st.download_button(label="⬇️ Download Complete Leakage Audit Report (.csv)", data=csv_data, file_name="LeakOptix_CFO_Audit_Report.csv", mime="text/csv")
+
+                    # --- नया फीचर (Code 27): Official PDF Audit Report बनाना ---
+                    pdf = FPDF()
+                    pdf.add_page()
+                    pdf.set_font("Arial", "B", 16)
+                    pdf.cell(0, 10, "LeakOptix AI - Official Enterprise Audit Report", ln=True, align="C")
+                    pdf.set_font("Arial", "", 11)
+                    pdf.cell(0, 8, f"Audit Date: {datetime.now().strftime('%Y-%m-%d %H:%M')} | Audited File: {bank_file.name}", ln=True, align="C")
+                    pdf.ln(6)
+                    pdf.set_font("Arial", "B", 12)
+                    pdf.cell(0, 8, f"Executive Summary: Total Monthly Savings Identified = ${total_real_savings}/month | Critical Risks = {total_real_risks}", ln=True)
+                    pdf.ln(4)
+                    pdf.set_font("Arial", "", 10)
+                    for item in report_rows:
+                        line_txt = f"- [{item['Risk_Category']}] {item['Employee']} | Vendor: {item['Vendor']} | Action: {item['AI_Action']}"
+                        pdf.cell(0, 7, line_txt.encode("latin-1", "replace").decode("latin-1"), ln=True)
+                    pdf_bytes = pdf.output(dest="S").encode("latin-1")
+                    st.download_button(label="📄 Download Official CFO Audit Report (.pdf)", data=pdf_bytes, file_name="LeakOptix_Official_Audit_Report.pdf", mime="application/pdf")
+
 
                     st.markdown("---")
                     st.header("📜 Past Enterprise Audits History (SQLite Database)")
