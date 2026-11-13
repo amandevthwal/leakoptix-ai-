@@ -75,6 +75,10 @@ else:
     st.sidebar.title("🛡️ LeakOptix AI")
     st.sidebar.success(f"🏢 {st.session_state['active_company']}")
     st.sidebar.info("📍 Server: Jaipur Cloud Node")
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("⚙️ Executive Controls")
+    curr_mode = st.sidebar.selectbox("💱 Display Currency", ["USD ($)", "INR (₹)"], key="curr_select")
+    budget_limit = st.sidebar.number_input("🎯 Monthly Budget Limit ($)", min_value=100, value=1500, step=100, key="budget_cap")
     if st.sidebar.button("🚪 Secure Logout"):
         st.session_state["authenticated"] = False
         st.rerun()
@@ -326,6 +330,40 @@ Generated securely by LeakOptix AI Enterprise Safeguard."""
 
 
 
+
+            # --- नया फीचर (Code 33): Live Budget Threshold & Currency Alert ---
+            total_spend_usd = int(df["Monthly_Cost_USD"].sum())
+            rate = 84 if st.session_state.get("curr_select") == "INR (₹)" else 1
+            sym = "₹" if rate == 84 else "$"
+            cap_usd = st.session_state.get("budget_cap", 1500)
+
+            st.info(f"💱 **Active Currency Mode:** {st.session_state.get('curr_select', 'USD ($)')} | **Total Audited Spend:** {sym}{total_spend_usd * rate:,}/month | **Total Leakage:** {sym}{total_real_savings * rate:,}/month")
+            if total_spend_usd > cap_usd:
+                over_amt = (total_spend_usd - cap_usd) * rate
+                st.error(f"🚨 **BUDGET BREACH ALERT:** Total monthly SaaS spend ({sym}{total_spend_usd * rate:,}) exceeded your corporate budget limit ({sym}{cap_usd * rate:,}) by **{sym}{over_amt:,}**!")
+            else:
+                st.success(f"✅ **Within Corporate Budget:** Total monthly spend ({sym}{total_spend_usd * rate:,}) is safely under your limit ({sym}{cap_usd * rate:,}).")
+
+
+            # --- नया फीचर (Code 34): Interactive Department & Vendor Spend Explorer ---
+            st.markdown("---")
+            st.header("🔍 Interactive Department & Vendor Spend Explorer")
+            f_col1, f_col2 = st.columns(2)
+            with f_col1:
+                dept_list = ["All Departments"] + sorted(df["Department"].dropna().unique().tolist()) if "Department" in df.columns else ["All Departments"]
+                sel_dept = st.selectbox("🏢 Filter by Department", dept_list, key="dept_filter")
+            with f_col2:
+                vend_list = ["All Vendors"] + sorted(df["Clean_Vendor"].dropna().unique().tolist())
+                sel_vend = st.selectbox("💻 Filter by Software Vendor", vend_list, key="vend_filter")
+
+            filtered_df = df.copy()
+            if sel_dept != "All Departments" and "Department" in filtered_df.columns:
+                filtered_df = filtered_df[filtered_df["Department"] == sel_dept]
+            if sel_vend != "All Vendors":
+                filtered_df = filtered_df[filtered_df["Clean_Vendor"] == sel_vend]
+
+            st.info(f"📊 **Filtered View:** Showing **{len(filtered_df)} records** | Filtered Monthly Spend: **${int(filtered_df['Monthly_Cost_USD'].sum()):,}/month**")
+            st.dataframe(filtered_df, use_container_width=True)
 
                 # --- नया फीचर (Code 29): 1-Year & 3-Year Executive ROI Projection ---
                 st.markdown("---")
