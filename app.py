@@ -283,6 +283,28 @@ else:
                     pdf_bytes = pdf.output(dest="S").encode("latin-1")
                     st.download_button(label="📄 Download Official CFO Audit Report (.pdf)", data=pdf_bytes, file_name="LeakOptix_Official_Audit_Report.pdf", mime="application/pdf")
 
+                    # --- नया फीचर (Code 32): Executive CFO Email Alert & Notice Generator ---
+                    st.markdown("---")
+                    st.subheader("📧 Automated CFO Action Email & Cancellation Notice")
+                    if total_real_risks > 0:
+                        curr_org = st.session_state.get("active_company", "Enterprise Client")
+                        action_list = "\n".join([f"- {r['Risk_Category']}: {r['Employee']} ({r['Vendor']}) -> {r['AI_Action']}" for r in report_rows])
+                        email_draft = f"""Subject: URGENT: SaaS & AI Cost Leakage Audit Action Required (${total_real_savings}/month Savings)
+
+Dear IT & Finance Administration Team ({curr_org}),
+
+Our automated LeakOptix AI Audit Engine has scanned our latest software ledger and identified {total_real_risks} critical cost leakages totaling ${total_real_savings}/month (${total_real_savings * 12}/year).
+
+Immediate Action Items:
+{action_list}
+
+Please revoke unused licenses and enforce API spending caps within 24 hours to prevent recurring financial waste.
+
+Generated securely by LeakOptix AI Enterprise Safeguard."""
+                        st.info("📋 One-Click Copy: Copy the auto-generated email notice below and send directly to your IT/Vendor team.")
+                        st.code(email_draft, language="text")
+
+
 
                     st.markdown("---")
                     st.header("📜 Past Enterprise Audits History (Isolated Company Vault)")
@@ -304,29 +326,6 @@ else:
 
 
 
-
-                # --- नया फीचर (Code 32): Executive CFO Email Alert & Notice Generator ---
-                st.markdown("---")
-                st.header("📧 Automated CFO Action Email & Cancellation Notice")
-                if total_real_risks > 0:
-                    curr_org = st.session_state.get("active_company", "Enterprise Client")
-                    action_list = "\n".join([f"- {r['Risk_Category']}: {r['Employee']} ({r['Vendor']}) -> {r['AI_Action']}" for r in report_rows])
-                    email_draft = f"""Subject: URGENT: SaaS & AI Cost Leakage Audit Action Required (${total_real_savings}/month Savings)
-
-Dear IT & Finance Administration Team ({curr_org}),
-
-Our automated LeakOptix AI Audit Engine has scanned our latest software ledger and identified {total_real_risks} critical cost leakages totaling ${total_real_savings}/month (${total_real_savings * 12}/year).
-
-Immediate Action Items:
-{action_list}
-
-Please revoke unused licenses and enforce API spending caps within 24 hours to prevent recurring financial waste.
-
-Generated securely by LeakOptix AI Enterprise Safeguard."""
-                    st.info("📋 One-Click Copy: Copy the auto-generated email notice below and send directly to your IT/Vendor team.")
-                    st.code(email_draft, language="text")
-                else:
-                    st.success("✅ Zero leakages detected—no urgent cancellation notice required!")
 
                 # --- नया फीचर (Code 29): 1-Year & 3-Year Executive ROI Projection ---
                 st.markdown("---")
