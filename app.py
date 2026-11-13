@@ -285,16 +285,21 @@ else:
 
 
                     st.markdown("---")
-                    st.header("📜 Past Enterprise Audits History (SQLite Database)")
+                    st.header("📜 Past Enterprise Audits History (Isolated Company Vault)")
                     conn = sqlite3.connect("leakoptix_history.db")
                     c = conn.cursor()
-                    c.execute("CREATE TABLE IF NOT EXISTS audit_logs (Audit_Time TEXT, File_Name TEXT, Total_Records INT, Savings_USD INT, Risks_Found INT)")
+                    c.execute("CREATE TABLE IF NOT EXISTS enterprise_audit_logs (Company_Name TEXT, Audit_Time TEXT, File_Name TEXT, Total_Records INT, Savings_USD INT, Risks_Found INT)")
                     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    c.execute("INSERT INTO audit_logs VALUES (?, ?, ?, ?, ?)", (now_str, bank_file.name, int(len(df)), int(total_real_savings), int(total_real_risks)))
+                    curr_comp = st.session_state.get("active_company", "LeakOptix HQ (Master Admin)")
+                    c.execute("INSERT INTO enterprise_audit_logs VALUES (?, ?, ?, ?, ?, ?)", (curr_comp, now_str, bank_file.name, int(len(df)), int(total_real_savings), int(total_real_risks)))
                     conn.commit()
-                    df_hist = pd.read_sql_query("SELECT * FROM audit_logs ORDER BY Audit_Time DESC", conn)
+                    if curr_comp == "LeakOptix HQ (Master Admin)":
+                        df_hist = pd.read_sql_query("SELECT * FROM enterprise_audit_logs ORDER BY Audit_Time DESC", conn)
+                        st.info("👑 Master Admin View: Showing isolated audit logs across all registered companies.")
+                    else:
+                        df_hist = pd.read_sql_query("SELECT * FROM enterprise_audit_logs WHERE Company_Name=? ORDER BY Audit_Time DESC", conn, params=(curr_comp,))
+                        st.success(f"🔒 Enterprise Data Isolation Active: Showing private audit vault for **{curr_comp}** only.")
                     conn.close()
-                    st.success("✅ Current Audit Record permanently saved to SQLite Database!")
                     st.dataframe(df_hist)
 
 
