@@ -171,7 +171,8 @@ else:
     st.subheader("📂 Step 1: Upload Enterprise Data Sources")
     up_col1, up_col2 = st.columns(2)
     with up_col1:
-        bank_file = st.file_uploader("🏦 Upload Bank / Card Statement (.csv, .xlsx)", type=["csv", "xlsx"], key="bank")
+        bank_files = st.file_uploader("🏦 Upload Bank / Card Statement(s) (.csv, .xlsx) — Single or Multi-Month", type=["csv", "xlsx"], accept_multiple_files=True)
+        bank_file = bank_files if bank_files else None
     with up_col2:
         hr_file = st.file_uploader("👥 Upload HR Employee Roster (Optional if combined)", type=["csv", "xlsx"], key="hr")
 
@@ -200,7 +201,8 @@ else:
 
     if bank_file is not None:
         try:
-            df_bank = pd.read_csv(bank_file) if bank_file.name.endswith(".csv") else pd.read_excel(bank_file)
+            df_bank = pd.concat([pd.read_csv(f) for f in bank_files], ignore_index=True)
+            if len(bank_files) > 1: st.success(f"📂 Multi-Month Merger Active: Combined **{len(bank_files)} Corporate Ledger Files**!")
             df_bank.fillna("Not Available", inplace=True)
 
             if hr_file is not None:
