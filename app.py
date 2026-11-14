@@ -56,7 +56,7 @@ if not st.session_state["authenticated"]:
                 username = st.text_input("👤 Corporate Username / Admin ID", key="login_user")
                 password = st.text_input("🔑 Security Password", type="password", key="login_pass")
                 if st.button("🔓 Secure Login to Dashboard", type="primary"):
-                    if username == "amit" and password == "amit@123":
+                    if username == "amit" and hash_sec_pwd(password) == "217329adcc5ceb8fc5cfaa2c92a2e1f7f932b6d641b091c1cfc2fbc3c143f6ea":
                         st.session_state["authenticated"] = True
                         st.session_state["active_company"] = "LeakOptix HQ (Master Admin)"
                         st.session_state["failed_attempts"] = 0
@@ -400,7 +400,17 @@ Generated securely by LeakOptix AI Enterprise Safeguard."""
 
 
 
-                            # --- नया फीचर (Code 37): Employee PII Data Masking & Privacy Shield ---
+                            # --- नया सुधार (Code 43): Real Financial Number & Currency Symbol Sanitizer ---
+                df["Monthly_Cost_USD"] = (
+                    df["Monthly_Cost_USD"]
+                    .astype(str)
+                    .str.replace(r"[^0-9.-]", "", regex=True)
+                    .replace("", "0")
+                    .astype(float)
+                    .fillna(0.0)
+                )
+
+                # --- नया फीचर (Code 37): Employee PII Data Masking & Privacy Shield ---
                 def mask_pii_name(name_val):
                     parts = str(name_val).strip().split()
                     masked = [p[:2] + "***" if len(p) > 2 else p[0] + "*" for p in parts if len(p) > 0]
@@ -446,6 +456,28 @@ Generated securely by LeakOptix AI Enterprise Safeguard."""
                 # --- नया फीचर (Code 38): Shadow IT & Vendor Consolidation Deep Detector ---
                 st.markdown("---")
                 # --- नया फीचर (Code 39): Enterprise Financial Health Score & Executive Grade Gauge ---
+                # --- नया फीचर (Code 45 - Problem #9): Free-Trial Auto-Charge & Unclaimed Refund Recovery ---
+                st.markdown("---")
+                st.header("🎣 Free-Trial Auto-Charge Trap & Unclaimed Refund Recovery")
+                rate_45 = 84 if st.session_state.get("curr_select") == "INR (₹)" else 1
+                sym_45 = "₹" if rate_45 == 84 else "$"
+                trial_rows = []
+                for _, r45 in df.iterrows():
+                    raw_desc = str(r45.get("Raw_Bank_Statement", "")).upper()
+                    cost_45 = float(r45.get("Monthly_Cost_USD", 0.0))
+                    hrs_45 = float(r45.get("Usage_Hours_Last_30_Days", 0.0)) if "Usage_Hours_Last_30_Days" in df.columns else 0.0
+                    hr_45 = str(r45.get("HR_Status", "")).lower()
+                    if cost_45 < 0:
+                        trial_rows.append({"Employee": r45.get("Employee_Name", "Unknown"), "Vendor": r45.get("Clean_Vendor", "Unknown"), "Amount": abs(cost_45), "Trap_Type": "💰 Pending / Unclaimed Vendor Refund", "Recovery_Action": "Verify Bank Credit Settlement"})
+                    elif any(k in raw_desc for k in ["TRIAL", "PROMO", "AUTO", "INTRO"]) or (hrs_45 == 0 and cost_45 > 0 and "active" in hr_45):
+                        trial_rows.append({"Employee": r45.get("Employee_Name", "Unknown"), "Vendor": r45.get("Clean_Vendor", "Unknown"), "Amount": cost_45, "Trap_Type": "🎣 Free-Trial Auto-Charge / Zero-Usage Trap", "Recovery_Action": "Claim Chargeback / Cancel Auto-Renew"})
+                if trial_rows:
+                    df_trial = pd.DataFrame(trial_rows)
+                    rec_total = df_trial["Amount"].sum() * rate_45
+                    st.warning(f"🚨 **{len(df_trial)} Trial-Trap / Refund Items Detected!** Recoverable Amount: **{sym_45}{int(rec_total):,}**")
+                    st.dataframe(df_trial, use_container_width=True)
+                else:
+                    st.success("✅ Zero Free-Trial Auto-Charge Traps or Unclaimed Refunds detected in this ledger.")
                 st.header("🏆 Enterprise SaaS Financial Health Scorecard")
                 total_spend_val = max(float(df["Monthly_Cost_USD"].sum()), 1.0)
                 leak_ratio = min(float(total_real_savings) / total_spend_val, 1.0)
@@ -512,19 +544,23 @@ Generated securely by LeakOptix AI Enterprise Safeguard."""
 
                 # --- नया फीचर (Code 29): 1-Year & 3-Year Executive ROI Projection ---
                 st.markdown("---")
-                st.header("📈 Executive ROI & Multi-Year Savings Projection (CFO Value)")
-                annual_usd = total_real_savings * 12
-                three_year_usd = annual_usd * 3
-                annual_inr_lakhs = round((annual_usd * 84) / 100000, 2)
-                three_year_inr_lakhs = round((three_year_usd * 84) / 100000, 2)
-
+                st.header("📈 Executive ROI & Multi-Year Savings Projection (Real Math Engine)")
+                rate_roi = 84 if st.session_state.get("curr_select") == "INR (₹)" else 1
+                sym_roi = "₹" if rate_roi == 84 else "$"
+                annual_usd = float(total_real_savings) * 12.0
+                three_yr_usd = annual_usd * 3.0
+                enterprise_annual_fee = 11988.0
+                real_roi_x = round(annual_usd / enterprise_annual_fee, 1) if annual_usd > 0 else 0.0
+                payback_days = max(1, int(round((999.0 / max(float(total_real_savings), 1.0)) * 30))) if total_real_savings > 0 else 0
                 r_col1, r_col2, r_col3 = st.columns(3)
                 with r_col1:
-                    st.metric(label="📅 1-Year Projected Savings", value=f"${annual_usd:,}/yr", delta=f"Approx ₹{annual_inr_lakhs} Lakhs/yr")
+                    st.metric(label="📅 1-Year Projected Savings", value=f"{sym_roi}{int(annual_usd * rate_roi):,}/yr", delta="Based on Real Audited Leakage")
                 with r_col2:
-                    st.metric(label="🚀 3-Year Enterprise Value", value=f"${three_year_usd:,}", delta=f"Approx ₹{three_year_inr_lakhs} Lakhs Saved")
+                    st.metric(label="🚀 3-Year Enterprise Value", value=f"{sym_roi}{int(three_yr_usd * rate_roi):,}", delta="Cumulative Capital Saved")
                 with r_col3:
-                    st.metric(label="💎 Estimated Software ROI", value="12.4x Return", delta="Pays for itself in < 30 days")
+                    roi_text = f"{real_roi_x}x Return" if real_roi_x > 0 else "0.0x (No Leakage)"
+                    pb_text = f"Pays back in ~{payback_days} days" if payback_days > 0 else "Zero Leakage Detected"
+                    st.metric(label="💎 Calculated Software ROI", value=roi_text, delta=pb_text)
 
                 # --- नया फीचर (Code 28): LeakOptix AI Financial Chat Assistant ---
                 st.markdown("---")
