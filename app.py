@@ -458,6 +458,44 @@ Generated securely by LeakOptix AI Enterprise Safeguard."""
                 # --- नया फीचर (Code 39): Enterprise Financial Health Score & Executive Grade Gauge ---
                 # --- नया फीचर (Code 45 - Problem #9): Free-Trial Auto-Charge & Unclaimed Refund Recovery ---
                 st.markdown("---")
+                # --- नया फीचर (Code 46 - Problem #10): Silent Price Hike & Auto-Renewal Trap Detector ---
+                # --- नया फीचर (Code 47 - Problem #11): Exact Double-Billing & Duplicate Charge Detector ---
+                st.header("👯‍♂️ Exact Double-Billing & Duplicate Charge Detector")
+                rate_47 = 84 if st.session_state.get("curr_select") == "INR (₹)" else 1
+                sym_47 = "₹" if rate_47 == 84 else "$"
+                pos_47 = df[df["Monthly_Cost_USD"] > 0]
+                dup_groups = pos_47.groupby(["Employee_Name", "Clean_Vendor", "Monthly_Cost_USD"]).size().reset_index(name="Charge_Count")
+                dups_found = dup_groups[dup_groups["Charge_Count"] > 1].copy()
+                if not dups_found.empty:
+                    dups_found["Duplicate_Overcharge"] = ((dups_found["Charge_Count"] - 1) * dups_found["Monthly_Cost_USD"] * rate_47).round(2)
+                    dups_found["Unit_Charge"] = (dups_found["Monthly_Cost_USD"] * rate_47).round(2)
+                    tot_dup_loss = dups_found["Duplicate_Overcharge"].sum()
+                    st.error(f"🚨 **{len(dups_found)} Exact Double-Billing Incidents Detected!** Recoverable Duplicate Overcharge: **{sym_47}{int(tot_dup_loss):,}**")
+                    st.dataframe(dups_found[["Employee_Name", "Clean_Vendor", "Unit_Charge", "Charge_Count", "Duplicate_Overcharge"]], use_container_width=True)
+                else:
+                    st.success("✅ Zero Double-Billing: No identical duplicate charges found for the same employee and vendor.")
+                st.markdown("---")
+                st.header("📈 Silent Price Hike & Auto-Renewal Trap Detector")
+                rate_46 = 84 if st.session_state.get("curr_select") == "INR (₹)" else 1
+                sym_46 = "₹" if rate_46 == 84 else "$"
+                pos_df = df[df["Monthly_Cost_USD"] > 0]
+                hike_rows = []
+                if not pos_df.empty:
+                    v_stats = pos_df.groupby("Clean_Vendor")["Monthly_Cost_USD"].agg(["min", "max", "count"]).reset_index()
+                    for _, vr in v_stats.iterrows():
+                        if vr["count"] > 1 and vr["min"] > 0:
+                            pct_jump = ((vr["max"] - vr["min"]) / vr["min"]) * 100.0
+                            if pct_jump >= 20.0:
+                                extra_paid = vr["max"] - vr["min"]
+                                hike_rows.append({"Vendor": vr["Clean_Vendor"], "Base_Plan_Cost": round(vr["min"] * rate_46, 2), "Charged_Peak_Cost": round(vr["max"] * rate_46, 2), "Hike_Percentage": f"+{round(pct_jump, 1)}%", "Unapproved_Excess": round(extra_paid * rate_46, 2)})
+                if hike_rows:
+                    df_hike = pd.DataFrame(hike_rows)
+                    tot_excess = df_hike["Unapproved_Excess"].sum()
+                    st.error(f"🚨 **{len(df_hike)} Silent Vendor Price Hikes Detected!** Unapproved Excess Billing: **{sym_46}{int(tot_excess):,}**")
+                    st.dataframe(df_hike, use_container_width=True)
+                else:
+                    st.success("✅ Stable Vendor Pricing: No unannounced price hikes (>=20%) detected across recurring bills.")
+                st.markdown("---")
                 st.header("🎣 Free-Trial Auto-Charge Trap & Unclaimed Refund Recovery")
                 rate_45 = 84 if st.session_state.get("curr_select") == "INR (₹)" else 1
                 sym_45 = "₹" if rate_45 == 84 else "$"
