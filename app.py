@@ -460,6 +460,59 @@ Generated securely by LeakOptix AI Enterprise Safeguard."""
                 st.markdown("---")
                 # --- नया फीचर (Code 46 - Problem #10): Silent Price Hike & Auto-Renewal Trap Detector ---
                 # --- नया फीचर (Code 47 - Problem #11): Exact Double-Billing & Duplicate Charge Detector ---
+                # --- नया फीचर (Code 48 - Problem #12): Fake / Lookalike Vendor Fraud Detector ---
+                from difflib import SequenceMatcher
+                # --- नया फीचर (Code 49 - Problem #13): PDF Invoice vs Bank Cross-Check & GST Audit ---
+                import re
+                st.header("📄 PDF Invoice vs Bank Cross-Check & Indian GST Audit")
+                rate_49 = 84 if st.session_state.get("curr_select") == "INR (₹)" else 1
+                sym_49 = "₹" if rate_49 == 84 else "$"
+                if "pdf_file" in locals() and pdf_file is not None:
+                    try:
+                        pdf_file.seek(0)
+                        reader_49 = pypdf.PdfReader(pdf_file)
+                        full_pdf_txt = "\n".join([p.extract_text() or "" for p in reader_49.pages])
+                        gst_matches = re.findall(r"\b[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}\b", full_pdf_txt.upper())
+                        amt_matches = re.findall(r"(?:\$|INR|₹|USD|TOTAL|AMOUNT)\s*[:\-]?\s*([0-9,]+(?:\.[0-9]{1,2})?)", full_pdf_txt.upper())
+                        parsed_nums = [float(x.replace(",", "")) for x in amt_matches if x.replace(",", "").replace(".", "").isdigit()]
+                        inv_amt = max(parsed_nums) if parsed_nums else 0.0
+                        bank_tot = float(df["Monthly_Cost_USD"].sum())
+                        gst_status = f"✅ Valid GSTIN Found: {gst_matches}" if gst_matches else "⚠️ Missing 15-Digit GSTIN (Potential 18% ITC Tax Loss)"
+                        g_col1, g_col2, g_col3 = st.columns(3)
+                        with g_col1:
+                            st.metric("🧾 Extracted PDF Bill Max", f"{sym_49}{int(inv_amt * rate_49):,}")
+                        with g_col2:
+                            st.metric("🏦 Bank Statement Total", f"{sym_49}{int(bank_tot * rate_49):,}")
+                        with g_col3:
+                            diff_amt = round((bank_tot - inv_amt) * rate_49, 2) if inv_amt > 0 else 0.0
+                            st.metric("⚖️ Bank vs Invoice Variance", f"{sym_49}{int(diff_amt):,}", delta="Positive = Bank Charged More than PDF")
+                        st.info(f"🇮🇳 **Indian GST Compliance Check:** {gst_status}")
+                    except Exception as e49:
+                        st.warning(f"⚠️ PDF Cross-Check Note: {e49}")
+                else:
+                    st.info("💡 Upload any Vendor PDF Invoice at the top to automatically cross-check billed amount against bank charges & verify 15-digit Indian GSTIN.")
+                st.markdown("---")
+                st.header("🕵️‍♂️ Fake / Lookalike Vendor & Account Spoofing Detector")
+                rate_48 = 84 if st.session_state.get("curr_select") == "INR (₹)" else 1
+                sym_48 = "₹" if rate_48 == 84 else "$"
+                trusted_brands = ["MICROSOFT", "ADOBE", "OPENAI", "ZOOM", "SALESFORCE", "SLACK", "GOOGLE", "AMAZON", "ATLASSIAN", "FIGMA", "GITHUB", "NOTION"]
+                spoof_rows = []
+                unique_v = df["Clean_Vendor"].dropna().unique().tolist()
+                for uv in unique_v:
+                    u_clean = str(uv).strip().upper()
+                    for tb in trusted_brands:
+                        sim_ratio = SequenceMatcher(None, u_clean, tb).ratio()
+                        if 0.75 <= sim_ratio < 1.0:
+                            v_spend = df[df["Clean_Vendor"] == uv]["Monthly_Cost_USD"].sum()
+                            spoof_rows.append({"Suspicious_Vendor": uv, "Mimics_Official_Brand": tb, "Similarity_Score": f"{round(sim_ratio * 100, 1)}%", "At_Risk_Amount": round(v_spend * rate_48, 2), "Security_Verdict": "🚨 Verify Bank Beneficiary & GSTIN"})
+                if spoof_rows:
+                    df_spoof = pd.DataFrame(spoof_rows)
+                    tot_fraud_risk = df_spoof["At_Risk_Amount"].sum()
+                    st.error(f"🚨 **{len(df_spoof)} Lookalike / Spoofed Vendor Alerts!** Potential Fraud Exposure: **{sym_48}{int(tot_fraud_risk):,}**")
+                    st.dataframe(df_spoof, use_container_width=True)
+                else:
+                    st.success("✅ Vendor Identity Verified: No lookalike or typo-squatted vendor names detected.")
+                st.markdown("---")
                 st.header("👯‍♂️ Exact Double-Billing & Duplicate Charge Detector")
                 rate_47 = 84 if st.session_state.get("curr_select") == "INR (₹)" else 1
                 sym_47 = "₹" if rate_47 == 84 else "$"
