@@ -464,6 +464,22 @@ Generated securely by LeakOptix AI Enterprise Safeguard."""
                 from difflib import SequenceMatcher
                 # --- नया फीचर (Code 49 - Problem #13): PDF Invoice vs Bank Cross-Check & GST Audit ---
                 import re
+                # --- नया फीचर (Code 50 - Problem #14): Zero-Login / Dormant Paid License Detector ---
+                st.header("💤 Zero-Login & Dormant Paid License Detector")
+                rate_50 = 84 if st.session_state.get("curr_select") == "INR (₹)" else 1
+                sym_50 = "₹" if rate_50 == 84 else "$"
+                if "Usage_Hours_Last_30_Days" in df.columns:
+                    dormant_df = df[(df["Monthly_Cost_USD"] > 0) & (pd.to_numeric(df["Usage_Hours_Last_30_Days"], errors="coerce").fillna(0) <= 1.0)].copy()
+                    if not dormant_df.empty:
+                        dormant_df["Wasted_Cost"] = (dormant_df["Monthly_Cost_USD"] * rate_50).round(2)
+                        tot_dormant = dormant_df["Wasted_Cost"].sum()
+                        st.warning(f"💤 **{len(dormant_df)} Dormant / Zero-Usage Paid Licenses Found!** Idle Monthly Waste: **{sym_50}{int(tot_dormant):,}/month**")
+                        st.dataframe(dormant_df[["Employee_Name", "Clean_Vendor", "Usage_Hours_Last_30_Days", "Wasted_Cost"]], use_container_width=True)
+                    else:
+                        st.success("✅ High License Utilization: All paid software seats show active employee usage (>1 hr/month).")
+                else:
+                    st.info("ℹ️ Tip: Include a 'Usage_Hours_Last_30_Days' column in your export to detect zero-login idle seats.")
+                st.markdown("---")
                 st.header("📄 PDF Invoice vs Bank Cross-Check & Indian GST Audit")
                 rate_49 = 84 if st.session_state.get("curr_select") == "INR (₹)" else 1
                 sym_49 = "₹" if rate_49 == 84 else "$"
