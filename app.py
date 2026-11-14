@@ -153,6 +153,17 @@ else:
         st.dataframe(df_sec, use_container_width=True)
 
     st.title("🛡️ LeakOptix AI - Enterprise Expense & SaaS Safeguard")
+    # --- नया फीचर (Code 54): Client Onboarding & Blank Standard Audit Template (Zero Fake Data) ---
+    with st.expander("📥 New Client Onboarding: Download Blank Standard Audit Template (Zero Fake Data)"):
+        st.write("Download this blank corporate schema template, fill in your company's real ledger data, and upload below for a full 14-point AI audit.")
+        blank_headers = "Employee_Name,HR_Status,Department,Raw_Bank_Statement,Monthly_Cost_USD,Usage_Hours_Last_30_Days,Billing_Date\n"
+        st.download_button(
+            label="📄 Download Blank Corporate Schema (.csv)",
+            data=blank_headers.encode("utf-8"),
+            file_name="LeakOptix_Blank_Audit_Schema.csv",
+            mime="text/csv",
+            key="dl_blank_schema"
+        )
 
     st.subheader("Welcome Amit! Executive Visual Analytics & Multi-Source Audit Engine is Live.")
     st.markdown("---")
@@ -467,6 +478,31 @@ Generated securely by LeakOptix AI Enterprise Safeguard."""
                 # --- नया फीचर (Code 50 - Problem #14): Zero-Login / Dormant Paid License Detector ---
                 # --- नया सुधार (Code 51 - Tech Fix #6): Large-File Speed Guard & Unified 14-Problem Summary ---
                 # --- नया फीचर (Code 52): Department Budget Cap & Overspend Radar ---
+                # --- नया फीचर (Code 53): Upcoming Renewal & Contract Cancellation Deadline Radar ---
+                st.header("⏳ Upcoming Renewal & Cancellation Deadline Radar")
+                rate_53 = 84 if st.session_state.get("curr_select") == "INR (₹)" else 1
+                sym_53 = "₹" if rate_53 == 84 else "$"
+                date_cols = [c for c in df.columns if "date" in c.lower() or "renewal" in c.lower()]
+                if date_cols:
+                    d_col = date_cols
+                    temp_53 = df.copy()
+                    temp_53["Parsed_Date"] = pd.to_datetime(temp_53[d_col], errors="coerce")
+                    valid_dates = temp_53.dropna(subset=["Parsed_Date"]).copy()
+                    if not valid_dates.empty:
+                        today_dt = pd.Timestamp.now().normalize()
+                        valid_dates["Days_To_Next_Cycle"] = valid_dates["Parsed_Date"].apply(lambda d: ((d.replace(year=today_dt.year) - today_dt).days) % 30)
+                        urgent_ren = valid_dates[(valid_dates["Days_To_Next_Cycle"] <= 10) & (valid_dates["Monthly_Cost_USD"] > 0)].copy()
+                        if not urgent_ren.empty:
+                            urgent_ren["Renewal_Amount"] = (urgent_ren["Monthly_Cost_USD"] * rate_53).round(2)
+                            st.warning(f"⏰ **{len(urgent_ren)} Subscriptions Renewing Within 10 Days!** Cancel before auto-debit to save **{sym_53}{int(urgent_ren['Renewal_Amount'].sum()):,}**.")
+                            st.dataframe(urgent_ren[["Employee_Name", "Clean_Vendor", d_col, "Days_To_Next_Cycle", "Renewal_Amount"]], use_container_width=True)
+                        else:
+                            st.success("✅ No high-cost renewals due within the next 10 days.")
+                    else:
+                        st.info("ℹ️ Date column detected, but standard YYYY-MM-DD dates are needed for renewal countdown.")
+                else:
+                    st.info("ℹ️ Include a 'Billing_Date' or 'Renewal_Date' column to activate automated 10-day cancellation deadline alerts.")
+                st.markdown("---")
                 st.header("🏢 Department Budget Allocation & Overspend Radar")
                 rate_52 = 84 if st.session_state.get("curr_select") == "INR (₹)" else 1
                 sym_52 = "₹" if rate_52 == 84 else "$"
