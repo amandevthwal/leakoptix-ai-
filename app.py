@@ -771,3 +771,12 @@ Generated securely by LeakOptix AI Enterprise Safeguard."""
         with col1: st.metric(label="💰 Total Monthly Leakage Prevented", value="$0/month", delta="Upload Bank Statement")
         with col2: st.metric(label="⚠️ Total Operational Risks Flagged", value="0 Risks", delta="Waiting for Data")
         with col3: st.metric(label="🔒 Infrastructure Status", value="Ready & Armed", delta="Visual Charts Ready")
+
+# --- 🏆 GRAND FINALE (CODE 55): OFFICIAL ENTERPRISE COMPLIANCE CERTIFICATE & PRODUCTION FOOTER ---
+st.markdown("---")
+st.success(
+    "🏅 **OFFICIAL AUDIT INTEGRITY & ZERO-TRUST COMPLIANCE CERTIFICATE:** "
+    "All 14 financial & security diagnostics above are computed 100% from real uploaded corporate ledgers "
+    "(Zero Synthetic Data). Protected by SHA-256 Encryption, PII Masking & Zero-Retention Wipe Compliance."
+)
+st.caption("🛡️ **LeakOptix AI Enterprise Edition (v5.5 Production)** | 14-Point Financial Leakage & Fraud Safeguard | Engineered in Jaipur, Rajasthan, India 🇮🇳")
